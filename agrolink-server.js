@@ -2956,7 +2956,6 @@ async function initializeDatabase() {
                 FOREIGN KEY (postId) REFERENCES posts(id) ON DELETE CASCADE,
                 FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE
             );
-            CREATE INDEX IF NOT EXISTS idx_comments_parentId ON comments(parentId);
 
             CREATE TABLE IF NOT EXISTS likes (
                 id TEXT PRIMARY KEY,
@@ -3526,8 +3525,12 @@ async function initializeDatabase() {
                     await db.run('ALTER TABLE comments ADD COLUMN parentId TEXT');
                     console.log('✅ comments tablosuna parentId sütunu eklendi');
                 }
+
+                // parentId sütunu eklendikten sonra indeksi oluştur
+                await db.run('CREATE INDEX IF NOT EXISTS idx_comments_parentId ON comments(parentId)');
+                console.log('✅ idx_comments_parentId indeksi oluşturuldu');
             } catch (e) {
-                console.log('Comments sütun ekleme hatası:', e.message);
+                console.log('Comments sütun/indeks ekleme hatası:', e.message);
             }
 
         } catch (error) {
