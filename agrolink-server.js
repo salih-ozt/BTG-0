@@ -2954,8 +2954,7 @@ async function initializeDatabase() {
                 createdAt TEXT NOT NULL,
                 updatedAt TEXT NOT NULL,
                 FOREIGN KEY (postId) REFERENCES posts(id) ON DELETE CASCADE,
-                FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE,
-                FOREIGN KEY (parentId) REFERENCES comments(id) ON DELETE CASCADE
+                FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE
             );
             CREATE INDEX IF NOT EXISTS idx_comments_parentId ON comments(parentId);
 
@@ -3496,6 +3495,41 @@ async function initializeDatabase() {
             } catch (storiesError) {
                 console.log('stories tablosu mevcut değil, CREATE TABLE ile oluşturulacak');
             }
+
+            // YENİ: Stories tablosuna text, textColor, likeCount sütunları ekle
+            try {
+                const storiesColumns = await db.all("PRAGMA table_info(stories)");
+                const storiesColumnNames = storiesColumns.map(col => col.name);
+
+                if (!storiesColumnNames.includes('text')) {
+                    await db.run('ALTER TABLE stories ADD COLUMN text TEXT');
+                    console.log('✅ stories tablosuna text sütunu eklendi');
+                }
+                if (!storiesColumnNames.includes('textColor')) {
+                    await db.run('ALTER TABLE stories ADD COLUMN textColor TEXT DEFAULT "#FFFFFF"');
+                    console.log('✅ stories tablosuna textColor sütunu eklendi');
+                }
+                if (!storiesColumnNames.includes('likeCount')) {
+                    await db.run('ALTER TABLE stories ADD COLUMN likeCount INTEGER DEFAULT 0');
+                    console.log('✅ stories tablosuna likeCount sütunu eklendi');
+                }
+            } catch (e) {
+                console.log('Stories sütun ekleme hatası:', e.message);
+            }
+
+            // YENİ: Comments tablosuna parentId sütunu ekle (yanıtlar için)
+            try {
+                const commentsColumns = await db.all("PRAGMA table_info(comments)");
+                const commentsColumnNames = commentsColumns.map(col => col.name);
+
+                if (!commentsColumnNames.includes('parentId')) {
+                    await db.run('ALTER TABLE comments ADD COLUMN parentId TEXT');
+                    console.log('✅ comments tablosuna parentId sütunu eklendi');
+                }
+            } catch (e) {
+                console.log('Comments sütun ekleme hatası:', e.message);
+            }
+
         } catch (error) {
             console.error('Tablo güncelleme hatası:', error);
         }
